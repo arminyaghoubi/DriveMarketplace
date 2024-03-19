@@ -10,7 +10,7 @@ public class DbInitializer
     {
         using var scope = application.Services.CreateScope();
 
-        SeedData(scope.ServiceProvider.GetService<AuctionDbContext>());
+        SeedData(scope.ServiceProvider.GetService<AuctionDbContext>() ?? throw new ArgumentNullException());
     }
 
     private static void SeedData(AuctionDbContext context)
