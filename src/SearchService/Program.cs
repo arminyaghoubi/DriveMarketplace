@@ -1,17 +1,34 @@
-using MongoDB.Driver;
-using MongoDB.Entities;
+using MassTransit;
 using Polly;
 using Polly.Extensions.Http;
+using SearchService.Consumers;
 using SearchService.Data;
-using SearchService.Entities;
 using SearchService.Services;
-using System.Linq.Expressions;
 using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddHttpClient<AuctionServiceHttpClient>().AddPolicyHandler(GetPolicy());
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddMassTransit(configure =>
+{
+    configure.AddConsumersFromNamespaceContaining<AuctionCreatedConsumer>();
+
+    configure.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("search", false));
+
+    configure.UsingRabbitMq((context, config) =>
+    {
+        config.ReceiveEndpoint("search-auction-created", e =>
+        {
+            e.UseMessageRetry(r => r.Interval(5, 5));
+
+            e.ConfigureConsumer<AuctionCreatedConsumer>(context);
+        });
+
+        config.ConfigureEndpoints(context);
+    });
+});
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
