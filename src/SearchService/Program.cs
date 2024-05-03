@@ -19,6 +19,12 @@ builder.Services.AddMassTransit(configure =>
 
     configure.UsingRabbitMq((context, config) =>
     {
+        config.Host(builder.Configuration["RabbitMq:Host"], "/", host =>
+        {
+            host.Username(builder.Configuration.GetValue("RabbitMq:Username", "guest"));
+            host.Password(builder.Configuration.GetValue("RabbitMq:Password", "guest"));
+        });
+
         config.ReceiveEndpoint("search-auction-created", e =>
         {
             e.UseMessageRetry(r => r.Interval(5, 5));
@@ -44,8 +50,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
 app.UseAuthorization();
 
 app.MapControllers();
@@ -55,6 +59,7 @@ app.Lifetime.ApplicationStarted.Register(async () =>
 {
     try
     {
+        Console.WriteLine("Armin {0}", builder.Configuration.GetConnectionString("MongoDb"));
         await DbInitializer.InitDatabase(
             builder.Configuration.GetConnectionString("MongoDb"),
             app.Services.GetRequiredService<AuctionServiceHttpClient>());

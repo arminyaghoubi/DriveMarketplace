@@ -14,6 +14,7 @@ public class AuctionServiceHttpClient
     {
         _httpClient = httpClient;
         _baseUrl = configuration.GetValue<string>("AuctionServiceUrl");
+        Console.WriteLine("Armin {0}",_baseUrl);
     }
 
     public async Task<List<Item>> GetItemsForSearchDatabaseAsync()
